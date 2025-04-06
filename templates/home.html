@@ -1,0 +1,57 @@
+{% extends "base.html"%}
+{% block ttl %}UI for Models{% endblock %}
+{% block ppa %}Image Prediction UI{% endblock %}
+{% block body %}
+<div style="background-color: #fafafa; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 20px; width: 400px; text-align: center;">
+    <h2 style="color: #333; margin-bottom: 20px;">Upload Image</h2>
+
+    <label for="imageInput" style="font-size: 14px; color: #555; margin-bottom: 8px; display: inline-block;">Choose an image to upload:</label>
+    <input id="imageInput" type="file" style="display: block; margin: 12px 0; padding: 10px; width: 95%; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"/>
+    
+    <button id="btn" style="background-color: #4CAF50; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; margin-top: 20px;">Upload and Test</button>
+
+    <p id="msg" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #4CAF50;"></p>
+    <p id="SVM" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p>
+    <p id="RandomForest" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p>
+    <p id="XGBoost" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p>
+    <p id="Bagging" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p>
+    <!-- <p id="Ensemble" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p> -->
+</div>
+
+<script>
+    let b = document.getElementById("btn");
+    b.addEventListener("click", run);
+    document.getElementById("imageInput").addEventListener("change", (e) => {
+        document.getElementById("msg").innerText = "";
+        document.getElementById("SVM").innerText = "";
+        document.getElementById("RandomForest").innerText = "";
+        document.getElementById("XGBoost").innerText = "";
+        document.getElementById("Bagging").innerText = "";
+    })
+    async function run() {
+        const formData = new FormData();
+        const inputTag = document.getElementById("imageInput");
+
+        const file = inputTag.files[0];
+        formData.append("image", file, file.name);
+
+        let res = await fetch("http://localhost:8000/proc_upload", {
+            method: "POST",
+            body: formData
+        });
+
+        if (res.ok) {
+            let data = await res.json();
+            document.getElementById("msg").innerText = data.message;
+            document.getElementById("SVM").innerText = "SVM: " + data.SVM;
+            document.getElementById("RandomForest").innerText = "RandomForest: " + data.RandomForest;
+            document.getElementById("XGBoost").innerText = "XGBoost: " + data.XGBoost;
+            document.getElementById("Bagging").innerText = "Bagging: " + data.Bagging;
+            // document.getElementById("Ensemble").innerText = "Ensemble: " + data.Ensemble;
+            console.log(data);
+        } else {
+            console.log(res);
+        }
+    }
+</script>
+{% endblock %}

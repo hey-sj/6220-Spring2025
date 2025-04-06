@@ -3,3 +3,4 @@ dataset/dataverse_files/HAM10000_images_part_2/
 *.zip
 *.DS_Store
 .idea/
+__pycache__/
