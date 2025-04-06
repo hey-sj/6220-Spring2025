@@ -2,6 +2,22 @@
 {% block ttl %}UI for Models{% endblock %}
 {% block ppa %}Image Prediction UI{% endblock %}
 {% block body %}
+<style>
+    .msgStyle {
+        font-size: 16px; 
+        color: #333; 
+        margin: 12px 0; 
+        font-weight: bold; 
+        color: #4CAF50;
+    }
+    .resultStyle {
+        font-size: 16px;
+        color: #333; 
+        margin: 12px 0; 
+        font-weight: bold; 
+        color: #007BFF;
+    }
+</style>
 <div style="background-color: #fafafa; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 20px; width: 400px; text-align: center;">
     <h2 style="color: #333; margin-bottom: 20px;">Upload Image</h2>
 
@@ -9,24 +25,28 @@
     <input id="imageInput" type="file" style="display: block; margin: 12px 0; padding: 10px; width: 95%; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"/>
     
     <button id="btn" style="background-color: #4CAF50; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; margin-top: 20px;">Upload and Test</button>
-
-    <p id="msg" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #4CAF50;"></p>
-    <p id="SVM" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p>
-    <p id="RandomForest" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p>
-    <p id="XGBoost" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p>
-    <p id="Bagging" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p>
-    <!-- <p id="Ensemble" style="font-size: 16px; color: #333; margin: 12px 0; font-weight: bold; color: #007BFF;"></p> -->
+    <div id="result"></div>
 </div>
 
 <script>
     let b = document.getElementById("btn");
     b.addEventListener("click", run);
+    
+    const pids = ["message", "SVM", "RandomForest", "XGBoost", "Bagging", "Ensemble"];
+
+    let rdiv = document.getElementById("result");
+    
+    for(let pid of pids) {
+        let np = document.createElement("p");
+        np.setAttribute('id', pid);
+        np.classList.add(pid == "message" ? "msgStyle" : "resultStyle");
+        rdiv.appendChild(np);
+    }
+
     document.getElementById("imageInput").addEventListener("change", (e) => {
-        document.getElementById("msg").innerText = "";
-        document.getElementById("SVM").innerText = "";
-        document.getElementById("RandomForest").innerText = "";
-        document.getElementById("XGBoost").innerText = "";
-        document.getElementById("Bagging").innerText = "";
+        for(let pid of pids) {
+            document.getElementById(pid).innerText = ""
+        }
     })
     async function run() {
         const formData = new FormData();
@@ -42,12 +62,11 @@
 
         if (res.ok) {
             let data = await res.json();
-            document.getElementById("msg").innerText = data.message;
-            document.getElementById("SVM").innerText = "SVM: " + data.SVM;
-            document.getElementById("RandomForest").innerText = "RandomForest: " + data.RandomForest;
-            document.getElementById("XGBoost").innerText = "XGBoost: " + data.XGBoost;
-            document.getElementById("Bagging").innerText = "Bagging: " + data.Bagging;
-            // document.getElementById("Ensemble").innerText = "Ensemble: " + data.Ensemble;
+            for(let pid of pids) {
+                for(let pid of pids) {
+                    document.getElementById(pid).innerText = pid == "message" ? data[pid] : `${pid}: ${data[pid]}`
+                }
+            }
             console.log(data);
         } else {
             console.log(res);
