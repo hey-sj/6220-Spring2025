@@ -21,10 +21,10 @@ def load_model():
     }
 
     # Decompress Ensemble Model
-    # ensemble_model_path = 'model_training/best_ensemble_model.pkl.gz'
-    # with gzip.open(ensemble_model_path, 'rb') as f:
-    #     ensemble_model = joblib.load(f)
-    # models['Ensemble'] = ensemble_model
+    ensemble_model_path = 'model_training/best_ensemble_model.pkl.gz'
+    with gzip.open(ensemble_model_path, 'rb') as f:
+        ensemble_model = joblib.load(f)
+    models['Ensemble'] = ensemble_model
 
     le = joblib.load("model_training/label_encoder.pkl");
 
