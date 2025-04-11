@@ -7,6 +7,17 @@ import gzip
 UPLOAD_DIR = "server_utils/image_upload"
 models=None
 le=None
+disease_map = {
+    "nv": "melanocytic nevi",
+    "mel": "melanoma",
+    "bkl": "seborrheic keratoses/lichen-planus like keratoses",
+    "bcc": "basal cell carcinoma",
+    "akiec": "actinic keratoses and intraepithelial carcinoma / Bowen's disease",
+    "vasc": "vascular legions (angiomas, angiokeratomas, pyogenic granulomas and hemorrhage)",
+    "df": "dermatofibroma"
+}
+
+metrics_obj=None
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_DIR
@@ -28,11 +39,30 @@ def load_model():
 
     le = joblib.load("model_training/label_encoder.pkl");
 
+def set_metric_obj():
+    global metrics_obj
+    X, y = su.preprocessing()
+    metrics_obj = {}
+    for model_name, model in models.items():
+        metrics_obj[model_name] = su.get_metrics(model, X, y)
+
 @app.route("/")
 def home():
-    if(models is None):
-        load_model()
     return render_template("home.html")
+
+@app.route("/load_models")
+def load_models():
+    try:
+        if(models is None):
+            load_model()
+        if(metrics_obj is None):
+            set_metric_obj()
+        return "Success"
+    except Exception as e:
+        print(e)
+        res = jsonify({"msg": "uh-oh"})
+        res.status = 500
+        return res
 
 @app.route("/test", methods=['GET', 'POST'])
 def test():
@@ -58,12 +88,23 @@ def proc_upload():
         df = su.get_df(img_features)
         predictions = {}
         for model_name, model in models.items():
-            predictions[model_name] = le.inverse_transform(model.predict(df)).tolist();
-        predictions["message"] = "Prediction below!"
+            prediction = le.inverse_transform(model.predict(df)).tolist()[0];
+            predictions[model_name] = disease_map[prediction]
+        predictions["message"] = "Report below!"
         return jsonify(predictions)
     else:
         res = jsonify({"message": "Uploading error!"})
         res.status_code = 500
         return res
+    
+@app.route("/metrics", methods=["GET"])
+def metrics():
+    global metrics_obj
+    if(models is None):
+        load_model()
+    if(metrics_obj is None):
+       set_metric_obj()
+    return jsonify(metrics_obj)
+
 if(__name__ == "__main__") :
     app.run(port=8000, debug=True)

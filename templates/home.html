@@ -17,6 +17,32 @@
         font-weight: bold; 
         color: #007BFF;
     }
+    .resultDiv {
+        margin: 15px;
+        width: 25%;
+    }
+    .generalBtn {
+        border: none; 
+        padding: 12px 24px; 
+        font-size: 16px; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        transition: 
+        background-color 0.3s; 
+        margin-top: 20px;
+    }
+    .loadedColor {
+        background-color: #4CAF50; 
+        color: white;
+    }
+    .errorColor {
+        background-color: #ff0000; 
+        color: white;
+    }
+    .loadingColor {
+        background-color: #555555; 
+        color: #aaaaaa;
+    }
 </style>
 <div style="background-color: #fafafa; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 20px; width: 400px; text-align: center;">
     <h2 style="color: #333; margin-bottom: 20px;">Upload Image</h2>
@@ -24,28 +50,73 @@
     <label for="imageInput" style="font-size: 14px; color: #555; margin-bottom: 8px; display: inline-block;">Choose an image to upload:</label>
     <input id="imageInput" type="file" style="display: block; margin: 12px 0; padding: 10px; width: 95%; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;"/>
     
-    <button id="btn" style="background-color: #4CAF50; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; margin-top: 20px;">Upload and Test</button>
-    <div id="result"></div>
+    <button id="btn" class="generalBtn"></button>
+</div>
+
+<div id="report">
+    <h3 id="message" class="msgStyle"></h3>
+    <div id="result" style="display: flex;"></div>
 </div>
 
 <script>
     let b = document.getElementById("btn");
-    b.addEventListener("click", run);
+    b.innerText = "Loading Models..."
+    b.classList.add("loadingColor");
+    
+    fetch("/load_models")
+    .then((r) => {
+        if(r.ok) {
+            b.innerText = "Upload and Test";
+            b.classList.replace("loadingColor", "loadedColor")
+            b.addEventListener("click", run);
+        } else {
+            b.innerText = "Error Loading. Check Server";
+            b.classList.replace("loadingColor", "errorColor")
+        }
+    })
     
     const pids = ["message", "SVM", "RandomForest", "XGBoost", "Bagging", "Ensemble"];
 
     let rdiv = document.getElementById("result");
     
     for(let pid of pids) {
-        let np = document.createElement("p");
-        np.setAttribute('id', pid);
-        np.classList.add(pid == "message" ? "msgStyle" : "resultStyle");
-        rdiv.appendChild(np);
+        if(pid == "message") continue;
+        let nd = document.createElement("div");
+        let h3 = document.createElement("h3");
+        let p1 = document.createElement("p");
+        let p2 = document.createElement("p");
+        let p3 = document.createElement("p");
+        
+        h3.setAttribute("id", pid+"h3");
+        p1.setAttribute("id", pid+"prediction");
+        p2.setAttribute("id", pid+"precision");
+        p3.setAttribute("id", pid+"accuracy");
+        
+        nd.classList.add("resultDiv")
+        h3.classList.add("resultStyle");
+        p1.classList.add("resultStyle");
+        p2.classList.add("resultStyle");
+        p3.classList.add("resultStyle");
+
+        nd.appendChild(h3);
+        nd.appendChild(p1);
+        nd.appendChild(p2);
+        nd.appendChild(p3);
+
+        rdiv.appendChild(nd);
+
     }
 
     document.getElementById("imageInput").addEventListener("change", (e) => {
         for(let pid of pids) {
-            document.getElementById(pid).innerText = ""
+            if(pid == "message") {
+                document.getElementById(pid).innerText = ""
+            } else {
+                document.getElementById(pid+"h3").innerText = "";
+                document.getElementById(pid+"prediction").innerText = "";
+                document.getElementById(pid+"precision").innerText = "";
+                document.getElementById(pid+"accuracy").innerText = "";
+            }
         }
     })
     async function run() {
@@ -54,17 +125,25 @@
 
         const file = inputTag.files[0];
         formData.append("image", file, file.name);
-
-        let res = await fetch("http://localhost:8000/proc_upload", {
+        let res = await fetch("/proc_upload", {
             method: "POST",
             body: formData
         });
+        let metricRes = await fetch("/metrics");
 
-        if (res.ok) {
+        if (res.ok && metricRes.ok) {
             let data = await res.json();
+            let metricData = await metricRes.json();
             for(let pid of pids) {
                 for(let pid of pids) {
-                    document.getElementById(pid).innerText = pid == "message" ? data[pid] : `${pid}: ${data[pid]}`
+                    if(pid == "message") {
+                        document.getElementById(pid).innerText = data[pid];
+                    } else {
+                        document.getElementById(pid+"h3").innerText = pid;
+                        document.getElementById(pid+"prediction").innerText = `Prediction: ${data[pid]}`;
+                        document.getElementById(pid+"precision").innerText = `Model Precision: ${metricData[pid].precision}`
+                        document.getElementById(pid+"accuracy").innerText = `Model Accuracy: ${metricData[pid].accuracy}`;
+                    }
                 }
             }
             console.log(data);
