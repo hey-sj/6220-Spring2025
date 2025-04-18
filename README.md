@@ -8,10 +8,10 @@ Siting Liang, Grace Chong, Jicheng Li, Teng Liu, Qingyang Guo
 ├── server.py                # Main Flask application
 ├── requirements.txt         # Python dependencies
 ├── models_performance.ipynb # Summary notebook of model performance
-├── templates/               # 
+├── templates/               # Design files for UI
 ├── server_utils             # 
-│   ├── image_upload         # 
-│   └── modules              # 
+│   ├── image_upload         # Directory where images are uploaded to (Do not remove)
+│   └── modules              # Logic for feature extraction and metric computation for UI resides here 
 ├── model_training/          # Saved models and notebook for model training
 ├── dataset/                 # 
 │   ├── data_exploration     # 
